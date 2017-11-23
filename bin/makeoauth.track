@@ -1,0 +1,136 @@
+#!/usr/bin/perl -w
+# makeoauth: make oauth key
+# usage: makeoauth
+# 20130614 erikt(at)xs4all.nl
+
+use lib "/home/cloud/lib/URI-1.60";
+
+use strict;
+use URI::Escape;
+# documentation: http://perldoc.perl.org/Digest/SHA.html
+use Digest::SHA qw(hmac_sha1 hmac_sha1_base64);
+
+# doc: https://dev.twitter.com/docs/auth/creating-signature ###################
+
+# Collecting parameters
+
+my $signature_base = "";
+
+# my $include_entities = "true";
+# $signature_base .= uri_escape("include_entities") .
+#                    '=' .
+#                    uri_escape($include_entities) .
+#                    '&';
+
+$signature_base .= uri_escape("language") .
+        '=' .
+        uri_escape("nl") .
+        '&';
+
+use lib "/home/cloud/bin";
+use makeoauth_track_keys;
+package main;
+my $consumer_key = $makeoauth_track_keys::consumer_key;
+my $consumer_secret = $makeoauth_track_keys::consumer_secret;
+my $token = $makeoauth_track_keys::token;
+my $oauth_token_secret = $makeoauth_track_keys::oauth_token_secret;
+
+$signature_base .= uri_escape("oauth_consumer_key") . 
+                   '=' . 
+                   uri_escape($consumer_key) .
+                   '&';
+
+# generate random string
+my $nonce = "";
+for (my $i=0;$i<32;$i++) {
+   my $r = int(rand(62));
+   if ($r<10) { $r += 48; }
+   elsif ($r<36) { $r += 55; }
+   else { $r += 61; }
+   $nonce .= chr($r);
+}
+$signature_base .= uri_escape("oauth_nonce") .
+        '=' . 
+        uri_escape($nonce) .
+        '&';
+
+my $signature_method = "HMAC-SHA1";
+$signature_base .= uri_escape("oauth_signature_method") .
+        '=' .       
+        uri_escape($signature_method) .
+        '&';
+
+my $timestamp = time();
+$signature_base .= uri_escape("oauth_timestamp") .
+        '=' .     
+        uri_escape($timestamp) .
+        '&';
+
+$signature_base .= uri_escape("oauth_token") .
+        '=' .     
+        uri_escape($token) .
+        '&';
+
+my $version = "1.0";
+$signature_base .= uri_escape("oauth_version") . 
+        '=' .     
+        uri_escape($version) .
+        '&';
+
+my $status = "een,het,ik,niet,maar,voor,ook,als,heb,naar,nog,echt,moet,weer,mijn,zijn,bij,jij,toch,lekker,geen,gewoon,gaat,meer,slapen,weet,mensen,alleen,kijken,leren,heeft,vandaag,eens,hoor,uur,jou,veel,denk,maken,leuk,heel,zou,daar,komt,eten,iets,vind,hebben,altijd,vanavond,jullie,thuis,iemand,helemaal,waar,waarom,wakker,komen,beetje,nieuwe,worden,steeds,gezellig,straks,kunnen,zeggen,iedereen,ofzo,omdat,werken,allemaal,moeten,andere,jaar,terug,staat,kut,ging,erg,zien,vroeg,bijna,zelf,zegt,vrij,zeker,werk,#gtst,#tienerthings,#bzv,#wiedoethet,#durftevragen,#nieuws,#tienerfeiten,#dutchteenagers,#dwdd,#penw,#widm,#slajezelf,#voetbalfans,#pownews,#geenzin,#slapen,#lekker,#rtl7,informatiekunde,infokunde,op,wel,zo,aan,gaan,wil,doen,mij,dus,uit,morgen,goed,wie,dit,hij,hier,nou,bent,zit,zin,rug,niks,dag,laat,weg,alles,doet,hem,tegen,deze,haar,zie,anders,zeg,huis,zal,jaa,nooit,tijd,hou,klaar,keer,wordt,hele,wij,snel,hebt,vakantie,kijk,beter,mooi,ons,eerst,toen,krijg,gwn,moeder,slaap,dood,weten,leven,gedaan,dingen,dacht,halen,leuke,eigenlijk,maakt,hoop,volgens,schatje,laatste,zitten,gelukkig,gezien,misschien,eindelijk,stad,gehad,buiten,zei,wanneer,geweest,daarna,wachten,haat,zonder,verder,lief,maandag,blij,egt,staan,binnen,eerste,paar,laten,soms,beneden,alweer,niemand,voel,kamer,dagen,zaterdag,enzo,mooie,onder,gelijk,praten,onze,wilt,moest,volgende,maak,willen,gemaakt,lieve,achter,nodig,kapot,wereld";
+$signature_base .= uri_escape("track") .
+        '=' .       
+        uri_escape($status);
+# we need this value for the curl call
+my $data = 'language=nl&track='.uri_escape($status);
+
+# Creating the signature string
+
+my $http_method = "POST";
+my $base_url = "https://stream.twitter.com/1.1/statuses/filter.json";
+
+$signature_base = $http_method . "&" .
+                  uri_escape($base_url) . "&" .
+                  uri_escape($signature_base);
+
+# Getting a signing key
+
+my $signing_key = uri_escape($consumer_secret) . "&" .
+                  uri_escape($oauth_token_secret);
+my $signature = hmac_sha1_base64($signature_base,$signing_key);
+while (length($signature) % 4) { $signature .= '='; }
+
+# doc: https://dev.twitter.com/docs/auth/authorizing-request #################
+
+my $header = "OAuth ";
+$header .= uri_escape("oauth_consumer_key") . 
+           '="' . 
+           uri_escape($consumer_key) .
+           '", ';
+$header .= uri_escape("oauth_nonce") .        
+           '="' .       
+           uri_escape($nonce) .
+           '", ';
+$header .= uri_escape("oauth_signature") .        
+           '="' .       
+           uri_escape($signature) .
+           '", ';
+$header .= uri_escape("oauth_signature_method") .        
+           '="' .       
+           uri_escape($signature_method) .
+           '", ';
+$header .= uri_escape("oauth_timestamp") .        
+           '="' .       
+           uri_escape($timestamp) .
+           '", ';
+$header .= uri_escape("oauth_token") .        
+           '="' .       
+           uri_escape($token) .
+           '", ';
+$header .= uri_escape("oauth_version") .        
+           '="' .       
+           uri_escape($version) .
+           '"';
+system("/usr/bin/curl --connect-timeout 45 --request '$http_method' '$base_url' --data '$data' --header 'Authorization: $header' --silent");
+
+exit(0);

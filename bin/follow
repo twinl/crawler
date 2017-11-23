@@ -1,0 +1,55 @@
+#!/bin/bash
+# hourly: run hourly process of collecting data from Twitter
+# usage: hourly (from crontab)
+# 20101216 erikt(at)xs4all.nl
+
+EXP=follow
+BASEDIR="/home/cloud"
+DATADIR="$BASEDIR/$EXP"
+LOGDIR="$BASEDIR/etc"
+DATE="`date '+%Y%m%d-%H'`"
+MIN="`date '+%M'`"
+OUTFILE="$DATADIR/$DATE.out.gz"
+LANG=en_US.UTF-8
+export LANG
+
+cd $DATADIR
+
+if [ "$MIN" = "00" ]
+then
+   # kill curl if it is running
+   ps -ef | grep curl | grep $EXP |\
+      tr -s ' ' ' ' | cut -d' ' -f2 | xargs kill -9 2>/dev/null
+   # wait five seconds
+   sleep 5
+fi
+
+# check if curl is running
+if [ -n "`ps -ef | grep curl | grep $EXP | grep -v grep`" ]
+then
+   # curl is running, so nothing to do
+   exit 0
+fi
+# no curl is running: restart!
+
+# save previous output after a restart
+if [ -f "$OUTFILE" ]
+then
+   NEWFILE="$OUTFILE.$$.$RANDOM"
+   while [ -f "$NEWFILE" ]
+   do
+      NEWFILE="$OUTFILE.$$.$RANDOM"
+   done
+   mv $OUTFILE $NEWFILE
+fi
+
+find . -perm -060 -exec chmod ug-w {} \;
+
+# start curl
+# 20130618 feed track uses this account information now
+cd $DATADIR
+# the next script calls curl
+$BASEDIR/bin/makeoauth.follow 2>>$LOGDIR/errorlog | gzip -c > $OUTFILE &
+
+# exit
+exit 0

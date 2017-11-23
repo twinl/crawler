@@ -1,0 +1,45 @@
+#!/bin/bash
+# hbackup: backup twitter log files to hadoop cluster
+# usage: hbackup (from cron)
+# note: alternative: hbackup files (stores all in 1 file)
+# 20120924 erikt(at)xs4all.nl
+
+eval $(/home/cloud/software/hathi-client/bin/env.sh)
+
+BASEDIR=/home/cloud
+TRACKDIR=$BASEDIR/track
+FOLLOWDIR=$BASEDIR/follow
+DIALECTDIR=$BASEDIR/dialect
+LOCATIONSDIR=$BASEDIR/locations
+BINDIR=$BASEDIR/bin
+TMPDIR=$BASEDIR/tmp
+
+if [ -z "$*" ]
+then
+   # copy file of previous hour
+   FILE="`date -d '-1 hour' '+%Y%m%d-%H'`.out.gz"
+   TWEETHOUR="`date -d '-3 hours' '+%a %b %d %H:'`"
+   # 20171123 needs to be reinstated
+   # create files with tweets of previous hour
+   #for DIR in $TRACKDIR $FOLLOWDIR $DIALECTDIR $LOCATIONSDIR
+   #do
+   #   cd $DIR
+   #   gunzip -c `ls [0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].out.gz|tail -2` 2>/dev/null |\
+   #      grep "^..created_at.:.$TWEETHOUR" | gzip -c > $FILE
+   #   chmod 444 $FILE
+   #done
+   cd $TRACKDIR
+   $BINDIR/merge.py $TRACKDIR/$FILE $FOLLOWDIR/$FILE $DIALECTDIR/$FILE $LOCATIONSDIR/$FILE |\
+       $BINDIR/addLanguage |\
+       gzip -c > $TMPDIR/$FILE
+   cd $TMPDIR
+   $BINDIR/hcp -r $FILE
+   rm -f $TMPDIR/$FILE
+else
+   FILE=`basename $1`
+   $BINDIR/merge.py $* | $BINDIR/addLanguage | gzip -c > $TMPDIR/$FILE
+   cd $TMPDIR
+   $BINDIR/hcp -r $FILE 2>&1 >&2
+   rm -f $TMPDIR/$FILE
+fi
+exit 0

@@ -1,0 +1,52 @@
+#!/bin/bash
+# hcp: copy twitter file to hadoop cluster
+# usage: hcp [-v] [-r] [-l] file1 [file2 ...]
+# 20120921 erikt(at)xs4all.nl
+
+# environment variables
+export PATH="$PATH:/home/cloud/bin:/home/cloud/software/hadoop-0.20.2-cdh3u4/bin"
+# export KRB5_CONFIG="/etc/krb5.conf"
+
+if [ "X$1" = "X-v" ]; then shift; VERBOSE=1; fi
+if [ "X$1" = "X-r" ]; then shift; REMOVE=1; fi
+if [ "X$1" = "X-l" ]; then shift; DELETELASTLINE=1; fi
+if [ "X$1" = "X-r" ]; then shift; REMOVE=1; fi
+if [ "X$1" = "X-v" ]; then shift; VERBOSE=1; fi
+
+
+for FILE in $*
+do
+   FILEBASE="`echo $FILE|rev|cut -d/ -f1|rev`"
+   YEAR=`echo $FILEBASE|cut -c1-4|tr -dc '[0-9]'`
+   MONTH=`echo $FILEBASE|cut -c5-6|tr -dc '[0-9]'`
+   DAY=`echo $FILEBASE|cut -c7-8|tr -dc '[0-9]'`
+   if [ -z "`echo $YEAR|grep ....`" -o -z "`echo $MONTH|grep ..`" -o \
+        -z "`echo $DAY|grep ..`" ]
+   then
+      echo "illegal file name: $FILE -> $YEAR $MONTH $DAY"
+      exit 1
+   fi
+   # create target directory if necessary
+   TARGETDIR=twitter/$YEAR/$MONTH/$DAY
+   if ! `hadoop fs -test -d $TARGETDIR 2>/dev/null`
+   then hadoop fs -mkdir -p $TARGETDIR; fi
+   # copy file
+   FILE="`colon2hyphen $FILE`"
+   FILEBASE="`echo $FILE|rev|cut -d/ -f1|rev`"
+   if [ "$REMOVE" != "" ]
+   then 
+      hadoop fs -rm $TARGETDIR/$FILEBASE 2>/dev/null >/dev/null
+   fi
+   if [ "$DELETELASTLINE" = "" ]
+   then
+      hadoop fs -copyFromLocal $FILE $TARGETDIR
+   else
+      TMPFILE=/tmp/hcp.$FILEBASE.$$.$RANDOM
+      gunzip -c $FILE 2>/dev/null | sed '$d' | gzip -c > $TMPFILE
+      hadoop fs -copyFromLocal $TMPFILE $TARGETDIR/$FILEBASE
+      rm -f $TMPFILE
+   fi
+   if [ "$VERBOSE" != "" ]; then echo "copied $FILE"; fi
+done
+
+exit 0

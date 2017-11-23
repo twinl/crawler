@@ -1,0 +1,166 @@
+#!/usr/bin/perl -w
+# gettweets: collect recent tweets using Twitter's filter api
+# usage: gettweets
+# 20130614 erikt(at)xs4all.nl
+
+# location of library for escaping characters
+# library can be downloaded from http://search.cpan.org/~gaas/URI-1.60/
+use lib "/home/cloud/lib/URI-1.60";
+
+use strict;
+use URI::Escape;
+# standard Perl function for creating the signature
+# documentation: http://perldoc.perl.org/Digest/SHA.html
+use Digest::SHA qw(hmac_sha1 hmac_sha1_base64);
+
+# BEGIN parameters of the Twitter user (replace these with your own values)
+# in order to obtain these values: do the following:
+# 1. login at https://dev.twitter.com/user/login?destination=home
+#    with a valid Twitter account
+# 2. select "My applications" in top right drop down menu under user icon
+# 3. create a new application and select it, or select an existing application
+# 4. select "Settings" in the horizontal menu
+# 5. change "Access" under "Application Type" to "Read and Write"
+# 6. press "Update this Twitter application's settings"
+# 7. select "Details" in the horizontal menu
+# 8. press "(Re)create my access token
+# 9. Wait a minute, reload the page and enter the token values on the page below
+
+use lib "/home/cloud/bin";
+use makeoauth_dialect_keys;
+package main;
+
+my $consumer_key = $makeoauth_dialect_keys::consumer_key;
+my $consumer_secret = $makeoauth_dialect_keys::consumer_secret;
+my $token = $makeoauth_dialect_keys::token;
+my $oauth_token_secret = $makeoauth_dialect_keys::oauth_token_secret;
+
+# END parameters of the Twitter user
+
+# BEGIN parameter for this search command
+# You should choose these words yourself: the words that you want to be
+# present in the tweets you want to collect (separate them by commas)
+
+my $words = "groetn,veul,mienjong,poedie,zoepm,aovend,oavend,heuren,kieken,laoten,loaten,onderwies,schoele,schrieven,speulen,uutslag,veur,veurzitter,houdoe,hajje,wittewel,eiges,hedde,gij,tsjin,troch,hawwe,hoebbe,adieje,moerge,morge,vastelaovend,diech,gezeen,gewoen,stiech,deenke,zoonder,mimang,kowru,boeng,loesoe,scoro,zemmel,zekerz,smatje,boeie,loesoe";
+
+# END parameter for this search command
+
+# doc: https://dev.twitter.com/docs/auth/creating-signature ###################
+
+# Collecting parameters
+
+my $signature_base = "";
+
+# this is menntion on Twitter's page "creating-signature"
+# but including it causes the signature values to be incorrect (so don't use it)
+# my $include_entities = "true";
+# $signature_base .= uri_escape("include_entities") .
+#                    '=' .
+#                    uri_escape($include_entities) .
+#                    '&';
+
+$signature_base .= uri_escape("oauth_consumer_key") . 
+                   '=' . 
+                   uri_escape($consumer_key) .
+                   '&';
+
+# generate random string
+my $nonce = "";
+for (my $i=0;$i<32;$i++) {
+   my $r = int(rand(62));
+   if ($r<10) { $r += 48; }
+   elsif ($r<36) { $r += 55; }
+   else { $r += 61; }
+   $nonce .= chr($r);
+}
+$signature_base .= uri_escape("oauth_nonce") .
+        '=' . 
+        uri_escape($nonce) .
+        '&';
+
+my $signature_method = "HMAC-SHA1";
+$signature_base .= uri_escape("oauth_signature_method") .
+        '=' .       
+        uri_escape($signature_method) .
+        '&';
+
+my $timestamp = time();
+$signature_base .= uri_escape("oauth_timestamp") .
+        '=' .     
+        uri_escape($timestamp) .
+        '&';
+
+$signature_base .= uri_escape("oauth_token") .
+        '=' .     
+        uri_escape($token) .
+        '&';
+
+my $version = "1.0";
+$signature_base .= uri_escape("oauth_version") . 
+        '=' .     
+        uri_escape($version) .
+        '&';
+
+# Note: if you change "track" on the next line to "follow", this code block
+# should be moved before the code that adds "oauth_consumer_key" to the
+# signature base! (because the parameters in the signature base should be 
+# sorted alphabetically)
+$signature_base .= uri_escape("track") .
+        '=' .       
+        uri_escape($words);
+# we need this value for the curl call
+my $data = "track=".uri_escape($words);
+
+# Creating the signature string
+
+my $http_method = "POST";
+my $base_url = "https://stream.twitter.com/1.1/statuses/filter.json";
+
+$signature_base = $http_method . "&" . 
+                  uri_escape($base_url) . "&" . 
+                  uri_escape($signature_base);
+
+# Getting a signing key
+
+my $signing_key = uri_escape($consumer_secret) . "&" . 
+                  uri_escape($oauth_token_secret);
+my $signature = hmac_sha1_base64($signature_base,$signing_key);
+# the signature length should be a multiple of 4
+while (length($signature) % 4) { $signature .= '='; }
+
+# doc: https://dev.twitter.com/docs/auth/authorizing-request #################
+
+my $header = "OAuth ";
+$header .= uri_escape("oauth_consumer_key") . 
+           '="' . 
+           uri_escape($consumer_key) .
+           '", ';
+$header .= uri_escape("oauth_nonce") .        
+           '="' .       
+           uri_escape($nonce) .
+           '", ';
+$header .= uri_escape("oauth_signature") .        
+           '="' .       
+           uri_escape($signature) .
+           '", ';
+$header .= uri_escape("oauth_signature_method") .        
+           '="' .       
+           uri_escape($signature_method) .
+           '", ';
+$header .= uri_escape("oauth_timestamp") .        
+           '="' .       
+           uri_escape($timestamp) .
+           '", ';
+$header .= uri_escape("oauth_token") .        
+           '="' .       
+           uri_escape($token) .
+           '", ';
+$header .= uri_escape("oauth_version") .        
+           '="' .       
+           uri_escape($version) .
+           '"';
+
+# call curl to collect recent tweets that satisfy the search criteria
+system("/usr/bin/curl --connect-timeout 30 --request '$http_method' '$base_url' --data '$data' --header 'Authorization: $header' --silent");
+
+exit(0);

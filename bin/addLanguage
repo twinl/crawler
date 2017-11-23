@@ -1,0 +1,33 @@
+#!/bin/bash
+# addLanguage: add language of tweet text to JSON file
+# usage: addLanguage < file
+# 20130208 erikt(at)xs4all.nl
+
+COMMAND="$0"
+BASEDIR=/home/cloud/software/LanguageIdentification/langclass
+BINDIR=/home/cloud/java/getjsontext
+TMPFILE=/tmp/addLanguage.$$.$RANDOM
+MAINBINDIR=/home/cloud/bin
+
+cd $BASEDIR
+# store tweets in temporary file
+tee $TMPFILE.tweet.tmp |\
+   # extract the tweet text
+   $MAINBINDIR/getTweetText.py |\
+   # normalization
+   tr '[:upper:]' '[:lower:]' | sed 's/http[^ ]*//g'| $MAINBINDIR/tokenize.py |\
+   # guess language
+   ../src/testtextcat conf.txt |\
+   # choose one of the give languages
+   ../all2one | cut -d' ' -f1 > $TMPFILE.lang
+# remove incomplete final tweet, if necessary
+NBROFTWEETS=`wc -l < $TMPFILE.lang`
+head -$NBROFTWEETS $TMPFILE.tweet.tmp > $TMPFILE.tweet
+# get interface language
+/home/cloud/java/misc/GetUserLang.sh < $TMPFILE.tweet > $TMPFILE.interface
+# insert language in tweet in json format
+paste -d' ' $TMPFILE.interface $TMPFILE.lang $TMPFILE.tweet | ../combine
+# delete temporary files
+rm -f $TMPFILE.interface $TMPFILE.tweet $TMPFILE.tweet.tmp $TMPFILE.lang
+
+exit 0
