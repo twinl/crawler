@@ -3,12 +3,9 @@
 # usage: gettweets
 # 20130614 erikt(at)xs4all.nl
 
-# location of library for escaping characters
-# library can be downloaded from http://search.cpan.org/~gaas/URI-1.60/
-use lib "/home/cloud/lib/URI-1.60";
-
 use strict;
 use URI::Escape;
+
 # standard Perl function for creating the signature
 # documentation: http://perldoc.perl.org/Digest/SHA.html
 use Digest::SHA qw(hmac_sha1 hmac_sha1_base64);
@@ -26,12 +23,21 @@ use Digest::SHA qw(hmac_sha1 hmac_sha1_base64);
 # 8. press "(Re)create my access token
 # 9. Wait a minute, reload the page and enter the token values on the page below
 
-use lib "/home/cloud/bin";
+# libraries required to find the location of the Twitter keys
+use File::Basename qw(dirname);
+use Cwd qw(abs_path);
+use lib dirname(dirname(abs_path($0)))."/keys";
+# Twitter keys file
 use makeoauth_dialect_keys;
 package main;
 
-my $INFILENAME = "/home/cloud/etc/dialect";
+my $COMMAND = $0;
+my $BASEDIR = dirname(dirname(abs_path($0)));
+my $INFILENAME = "$BASEDIR/etc/dialect";
 
+if (not defined $makeoauth_dialect_keys::consumer_key) {
+   die("$COMMAND: undefined Twitter keys!\n");
+}
 my $consumer_key = $makeoauth_dialect_keys::consumer_key;
 my $consumer_secret = $makeoauth_dialect_keys::consumer_secret;
 my $token = $makeoauth_dialect_keys::token;
@@ -43,13 +49,13 @@ my $oauth_token_secret = $makeoauth_dialect_keys::oauth_token_secret;
 # You should choose these words yourself: the words that you want to be
 # present in the tweets you want to collect (separate them by commas)
 
-my $words = "groetn,veul,mienjong,poedie,zoepm,aovend,oavend,heuren,kieken,laoten,loaten,onderwies,schoele,schrieven,speulen,uutslag,veur,veurzitter,houdoe,hajje,wittewel,eiges,hedde,gij,tsjin,troch,hawwe,hoebbe,adieje,moerge,morge,vastelaovend,diech,gezeen,gewoen,stiech,deenke,zoonder,mimang,kowru,boeng,loesoe,scoro,zemmel,zekerz,smatje,boeie,loesoe";
+my $words = "";
 if (open(INFILE,$INFILENAME)) {
    $words = <INFILE>;
    close(INFILE);
    chomp($words);
    $words =~ s/^track=//;
-}
+} else { die("$COMMAND: cannot open $INFILENAME\n"); }
 
 # END parameter for this search command
 

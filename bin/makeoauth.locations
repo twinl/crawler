@@ -3,15 +3,22 @@
 # usage: makeoauth
 # 20130614 erikt(at)xs4all.nl
 
-use lib "/home/cloud/lib/URI-1.60";
-
 use strict;
 use URI::Escape;
 # documentation: http://perldoc.perl.org/Digest/SHA.html
 use Digest::SHA qw(hmac_sha1 hmac_sha1_base64);
 
-my $command = $0;
-my $parametersFile = "/home/cloud/etc/locations";
+# libraries required to find the location of the Twitter keys
+use File::Basename qw(dirname);
+use Cwd qw(abs_path);
+use lib dirname(dirname(abs_path($0)))."/keys";
+# Twitter keys file
+use makeoauth_locations_keys;
+package main;
+
+my $COMMAND = $0;
+my $BASEDIR = dirname(dirname(abs_path($0)));
+my $parametersFile = "$BASEDIR/etc/locations";
 
 # doc: https://dev.twitter.com/docs/auth/creating-signature ###################
 
@@ -21,7 +28,7 @@ my $signature_base = "";
 
 my $status = ""; # READ FROM FILE
 if (not open(INFILE,$parametersFile)) {
-   die "$command: cannot read $parametersFile\n";
+   die "$COMMAND: cannot read $parametersFile\n";
 }
 $status = <INFILE>;
 close(INFILE);
@@ -33,16 +40,6 @@ $signature_base .= uri_escape("locations") .
 
 # we need this value for the curl call
 my $data = "locations=".uri_escape($status);
-
-#my $include_entities = "true";
-#$signature_base .= uri_escape("include_entities") .
-#                   '=' .
-#                   uri_escape($include_entities) .
-#                   '&';
-
-use lib "/home/cloud/bin";
-use makeoauth_locations_keys;
-package main;
 
 my $consumer_key = $makeoauth_locations_keys::consumer_key;
 my $consumer_secret = $makeoauth_locations_keys::consumer_secret;
