@@ -12,14 +12,14 @@ The contact person for this project is [Erik Tjong Kim Sang](https://ifarm.nl/).
 2. enter the new directory `crawler` on your system
 3. create a new directory `keys` in this directory
 4. create four files `makeoauth_NAME_keys.pm` in this directory, where `NAME` is one of `dialect`, `follow`, `locations` and `track`
-5. store the Twitter keys of four Twitter accounts in these files; the file `bin/makeoauth.dialect` in this collection contains more information (lines 13-24)
+5. store the Twitter keys of four Twitter accounts in these files; the file `bin/makeoauth.dialect` in this collection contains more information on how to acquire the keys (lines 13-24)
 6. start the four crawlers with bin/startall
 
 The crawling software needs valid Twitter credentials, which are
 not included here. You will need to store these in files in the
-directory keys. Here is an exampple of one of these files:
+directory keys. Here is an example of one of these files:
 
-```python
+```perl
 package makeoauth_NAME_keys;
 
 our $consumer_key = "...";
@@ -28,10 +28,11 @@ our $token = "...";
 our $oauth_token_secret = "...";
 ```
 
-Replace the three dots ... by the access keys. You do not 
-need to run all the four crawlers. You can also choose to 
-run only one of them. In that case comment away or remove 
-the redundant lines in the file `bin/startall`.
+Replace the three dots ... by the access keys. 
+
+You do not need to run all the four crawlers. You can also 
+choose to run only one of them. In that case comment away 
+or remove the redundant lines in the file `bin/startall`.
 
 The search queries of the four crawlers can be found in the 
 directory `etc`, in the files `dialect`, `follow`, `locations` 
