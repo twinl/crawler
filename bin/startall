@@ -1,0 +1,13 @@
+#!/bin/bash
+# startall: start all four twitter crawlers
+# usage: ./startall
+# 20181213 erikt(at)xs4all.nl
+
+BINDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
+$BINDIR/track
+$BINDIR/follow
+$BINDIR/dialect
+$BINDIR/locations
+
+exit 0
