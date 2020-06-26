@@ -44,7 +44,7 @@ def readData():
 
 def printData(data):
     for idInt in sorted(data.keys()):
-        data[idInt][SOURCECOLUMNNAME] = sources[idInt]
+        data[idInt][SOURCECOLUMNNAME] = sorted(list(set(sources[idInt])))
         print(json.dumps(data[idInt]))
 
 def main(argv):
