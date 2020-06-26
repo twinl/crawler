@@ -12,20 +12,21 @@ MIN="`date '+%M'`"
 OUTFILE="$DATADIR/$DATE.out.gz"
 LANG=en_US.UTF-8
 export LANG
+EXPWORD=`cat $LOGDIR/$EXP | tr , '\n' | grep .......... | tail -1`
 
 cd $DATADIR
 
 if [ "$MIN" = "00" ]
 then
    # kill curl if it is running
-   ps -ef | grep curl | grep ${EXP}=een |\
+   ps -ef | grep curl | grep ${EXPWORD} |\
       tr -s ' ' ' ' | cut -d' ' -f2 | xargs kill -9 2>/dev/null
    # wait five seconds
    sleep 5
 fi
 
 # check if curl is running
-if [ -n "`ps -ef | grep curl | grep ${EXP}=een | grep -v grep`" ]
+if [ -n "`ps -ef | grep curl | grep ${EXPWORD} | grep -v grep`" ]
 then
    # curl is running, so nothing to do
    exit 0
