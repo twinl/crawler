@@ -11,8 +11,10 @@ TRACKDIR=$BASEDIR/track
 FOLLOWDIR=$BASEDIR/follow
 DIALECTDIR=$BASEDIR/dialect
 LOCATIONSDIR=$BASEDIR/locations
+TRACKBDIR=$BASEDIR/trackb
 BINDIR=$BASEDIR/bin
 TMPDIR=$BASEDIR/tmp
+WEBSERVER=cloud@145.100.59.103
 
 if [ -z "$*" ]
 then
@@ -29,17 +31,19 @@ then
    #   chmod 444 $FILE
    #done
    cd $TRACKDIR
-   $BINDIR/merge.py $TRACKDIR/$FILE $FOLLOWDIR/$FILE $DIALECTDIR/$FILE $LOCATIONSDIR/$FILE |\
+   $BINDIR/merge.py $TRACKDIR/$FILE $FOLLOWDIR/$FILE $DIALECTDIR/$FILE $LOCATIONSDIR/$FILE $TRACKBDIR/$FILE |\
        $BINDIR/addLanguage |\
        gzip -c > $TMPDIR/$FILE
    cd $TMPDIR
-   $BINDIR/hcp -r $FILE
+   # $BINDIR/hcp -r $FILE
+   scp $FILE $WEBSERVER:/data/twitter
    rm -f $TMPDIR/$FILE
 else
    FILE=`basename $1`
    $BINDIR/merge.py $* | $BINDIR/addLanguage | gzip -c > $TMPDIR/$FILE
    cd $TMPDIR
-   $BINDIR/hcp -r $FILE 2>&1 >&2
+   # $BINDIR/hcp -r $FILE 2>&1 >&2a
+   scp $FILE $WEBSERVER:/data/twitter
    rm -f $TMPDIR/$FILE
 fi
 exit 0
