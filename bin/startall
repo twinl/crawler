@@ -6,8 +6,13 @@
 BINDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 $BINDIR/track
+sleep 1
 $BINDIR/follow
+sleep 1
 $BINDIR/dialect
+sleep 1
 $BINDIR/locations
+sleep 1
+$BINDIR/trackb
 
 exit 0
