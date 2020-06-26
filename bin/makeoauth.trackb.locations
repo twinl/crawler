@@ -1,0 +1,148 @@
+#!/usr/bin/perl -w
+# makeoauth: make oauth key
+# usage: makeoauth
+# 20130614 erikt(at)xs4all.nl
+
+use strict;
+use URI::Escape;
+# documentation: http://perldoc.perl.org/Digest/SHA.html
+use Digest::SHA qw(hmac_sha1 hmac_sha1_base64);
+
+# libraries required to find the location of the Twitter keys
+use File::Basename qw(dirname);
+use Cwd qw(abs_path);
+use lib dirname(dirname(abs_path($0)))."/keys";
+# Twitter keys file
+use makeoauth_locations_keys;
+package main;
+
+my $COMMAND = $0;
+my $BASEDIR = dirname(dirname(abs_path($0)));
+my $INFILENAME = "$BASEDIR/etc/trackb";
+
+# doc: https://dev.twitter.com/docs/auth/creating-signature ###################
+
+# Collecting parameters
+
+my $signature_base = "";
+
+$signature_base .= uri_escape("language") .
+        '=' .
+        uri_escape("nl") .
+        '&';
+
+if (not defined $makeoauth_locations_keys::consumer_key) {
+   die("$COMMAND: undefined Twitter keys!\n");
+}
+my $consumer_key = $makeoauth_locations_keys::consumer_key;
+my $consumer_secret = $makeoauth_locations_keys::consumer_secret;
+my $token = $makeoauth_locations_keys::token;
+my $oauth_token_secret = $makeoauth_locations_keys::oauth_token_secret;
+
+$signature_base .= uri_escape("oauth_consumer_key") . 
+                   '=' . 
+                   uri_escape($consumer_key) .
+                   '&';
+
+# generate random string
+my $nonce = "";
+for (my $i=0;$i<32;$i++) {
+   my $r = int(rand(62));
+   if ($r<10) { $r += 48; }
+   elsif ($r<36) { $r += 55; }
+   else { $r += 61; }
+   $nonce .= chr($r);
+}
+$signature_base .= uri_escape("oauth_nonce") .
+        '=' . 
+        uri_escape($nonce) .
+        '&';
+
+my $signature_method = "HMAC-SHA1";
+$signature_base .= uri_escape("oauth_signature_method") .
+        '=' .       
+        uri_escape($signature_method) .
+        '&';
+
+my $timestamp = time();
+$signature_base .= uri_escape("oauth_timestamp") .
+        '=' .     
+        uri_escape($timestamp) .
+        '&';
+
+$signature_base .= uri_escape("oauth_token") .
+        '=' .     
+        uri_escape($token) .
+        '&';
+
+my $version = "1.0";
+$signature_base .= uri_escape("oauth_version") . 
+        '=' .     
+        uri_escape($version) .
+        '&';
+
+my $status = "";
+if (open(INFILE,$INFILENAME)) {
+   $status = <INFILE>;
+   close(INFILE);
+   chomp($status);
+   $status =~ s/^track=//;
+} else { die("$COMMAND: cannot open $INFILENAME\n"); }
+
+$signature_base .= uri_escape("track") .
+        '=' .       
+        uri_escape($status);
+# we need this value for the curl call
+my $data = 'language=nl&track='.uri_escape($status);
+#my $data = 'language=nl&track='.uri_escape("");
+
+# Creating the signature string
+
+my $http_method = "POST";
+my $base_url = "https://stream.twitter.com/1.1/statuses/filter.json";
+
+$signature_base = $http_method . "&" .
+                  uri_escape($base_url) . "&" .
+                  uri_escape($signature_base);
+
+# Getting a signing key
+
+my $signing_key = uri_escape($consumer_secret) . "&" .
+                  uri_escape($oauth_token_secret);
+my $signature = hmac_sha1_base64($signature_base,$signing_key);
+while (length($signature) % 4) { $signature .= '='; }
+
+# doc: https://dev.twitter.com/docs/auth/authorizing-request #################
+
+my $header = "OAuth ";
+$header .= uri_escape("oauth_consumer_key") . 
+           '="' . 
+           uri_escape($consumer_key) .
+           '", ';
+$header .= uri_escape("oauth_nonce") .        
+           '="' .       
+           uri_escape($nonce) .
+           '", ';
+$header .= uri_escape("oauth_signature") .        
+           '="' .       
+           uri_escape($signature) .
+           '", ';
+$header .= uri_escape("oauth_signature_method") .        
+           '="' .       
+           uri_escape($signature_method) .
+           '", ';
+$header .= uri_escape("oauth_timestamp") .        
+           '="' .       
+           uri_escape($timestamp) .
+           '", ';
+$header .= uri_escape("oauth_token") .        
+           '="' .       
+           uri_escape($token) .
+           '", ';
+$header .= uri_escape("oauth_version") .        
+           '="' .       
+           uri_escape($version) .
+           '"';
+system("/usr/bin/curl --connect-timeout 45 --request '$http_method' '$base_url' --data '$data' --header 'Authorization: $header' --silent");
+
+exit(0);
