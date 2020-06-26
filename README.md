@@ -1,4 +1,5 @@
 # TwiNL: crawler code
+[![DOI](https://zenodo.org/badge/110267470.svg)](https://zenodo.org/badge/latestdoi/110267470)
 
 This is the code of the crawler part of the project TwiNL (2012-2013).
 This project also produced code for an 
