@@ -3,53 +3,66 @@
 # usage: hourly (from crontab)
 # 20101216 erikt(at)xs4all.nl
 
-EXP=track
-BASEDIR="/home/cloud"
-DATADIR="$BASEDIR/$EXP"
-LOGDIR="$BASEDIR/etc"
+EXP="`basename $0`"
+BASEDIR="/home/cloud/"
+DATADIR="$BASEDIR$EXP/"
+LOGDIR="${BASEDIR}etc/"
 DATE="`date '+%Y%m%d-%H'`"
 MIN="`date '+%M'`"
-OUTFILE="$DATADIR/$DATE.out.gz"
+OUTFILE="$DATE.out"
 LANG=en_US.UTF-8
 export LANG
-EXPWORD=`cat $LOGDIR/$EXP | tr , '\n' | grep .......... | tail -1`
 
-cd $DATADIR
+function start_crawler {
+   nohup stdbuf -oL -eL $BASEDIR/bin/makeoauth.$EXP >> $DATADIR$OUTFILE \
+                                         2>>${LOGDIR}errorlog </dev/null &
+}
+
+function stop_crawler {
+   ps -ef | grep curl | grep ${EXPWORD} |\
+      tr -s ' ' ' ' | cut -d' ' -f2 | xargs kill -9 2>/dev/null
+}
+
+function test_crawler_is_running {
+   ps -ef | grep curl | grep ${EXPWORD} | grep -v grep
+}
+
+function cleanup_output_files {
+   cd $DATADIR
+   for FILE in *.out
+   do
+      if [ "$FILE" != "$OUTFILE" ]
+      then
+         chmod 444 $FILE
+         gzip $FILE &
+      fi
+   done
+}
+
+function get_longest_query_word {
+   TMPFILE="/tmp/$EXP.$$.$RANDOM"
+   cat $LOGDIR$EXP | tr , '\n' | grep -v = > $TMPFILE 
+   WORD="`sed 's/./1/g' $TMPFILE | paste -d' ' - $TMPFILE | sort -n | tail -1 | cut -d' ' -f2`"
+   rm -f $TMPFILE
+   echo $WORD
+}
+
+EXPWORD="`get_longest_query_word`"
 
 if [ "$MIN" = "00" ]
 then
-   # kill curl if it is running
-   ps -ef | grep curl | grep ${EXPWORD} |\
-      tr -s ' ' ' ' | cut -d' ' -f2 | xargs kill -9 2>/dev/null
-   # wait five seconds
-   sleep 5
-fi
-
-# check if curl is running
-if [ -n "`ps -ef | grep curl | grep ${EXPWORD} | grep -v grep`" ]
-then
-   # curl is running, so nothing to do
-   exit 0
-fi
-# no curl is running: restart!
-
-# save previous output after a restart
-if [ -f "$OUTFILE" ]
-then
-   NEWFILE="$OUTFILE.$$.$RANDOM"
-   while [ -f "$NEWFILE" ]
+   stop_crawler
+   while [ -n "`test_crawler_is_running`" ]
    do
-      NEWFILE="$OUTFILE.$$.$RANDOM"
+      sleep 1
    done
-   mv $OUTFILE $NEWFILE
+   start_crawler
+   cleanup_output_files
+else
+   if [ -z "`test_crawler_is_running`" ]
+   then
+      start_crawler
+   fi
 fi
 
-find . -perm -060 -exec chmod ug-w {} \;
-
-# start curl
-cd $DATADIR
-# the next script calls curl
-$BASEDIR/bin/makeoauth.track 2>>$LOGDIR/errorlog | gzip -c > $OUTFILE &
-
-# exit
 exit 0
