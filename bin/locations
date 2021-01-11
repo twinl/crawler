@@ -21,7 +21,7 @@ then
    ps -ef | grep curl | grep $EXP |\
       tr -s ' ' ' ' | cut -d' ' -f2 | xargs kill -9 2>/dev/null
    # wait five seconds
-   sleep 5
+   sleep 10
 fi
 
 # check if curl is running

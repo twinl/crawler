@@ -6,13 +6,15 @@
 BINDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 $BINDIR/track
-sleep 1
+sleep 5
 $BINDIR/follow
-sleep 1
+sleep 5
 $BINDIR/dialect
-sleep 1
+sleep 5
 $BINDIR/locations
-sleep 1
+sleep 5
 $BINDIR/trackb
+#sleep 5
+#/home/cloud/projects/puregome/crawler/run-every-minute.sh
 
 exit 0
