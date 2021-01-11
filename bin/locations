@@ -4,7 +4,7 @@
 # 20101216 erikt(at)xs4all.nl
 
 EXP=locations
-BASEDIR="/home/cloud"
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. >/dev/null 2>&1 && pwd )"/
 DATADIR="$BASEDIR/$EXP"
 LOGDIR="$BASEDIR/etc"
 DATE="`date '+%Y%m%d-%H'`"
@@ -19,7 +19,7 @@ if [ "$MIN" = "00" ]
 then
    # kill curl if it is running
    ps -ef | grep curl | grep $EXP |\
-      tr -s ' ' ' ' | cut -d' ' -f2 | xargs kill -9 2>/dev/null
+      tr -s ' ' ' ' | sed 's/^ *//' | cut -d' ' -f2 | xargs kill -9 2>/dev/null
    # wait five seconds
    sleep 10
 fi
