@@ -14,8 +14,9 @@ LANG=en_US.UTF-8
 export LANG
 
 function start_crawler {
-   nohup stdbuf -oL -eL $BASEDIR/bin/makeoauth.$EXP >> $DATADIR$OUTFILE \
-                                         2>>${LOGDIR}errorlog </dev/null &
+   nohup stdbuf -oL -eL $BASEDIR/bin/makeoauth.$EXP \
+                        2>>${LOGDIR}errorlog </dev/null |\
+                        ${BASEDIR}/bin/save_output.py $DATADIR
 }
 
 function stop_crawler {
@@ -41,7 +42,7 @@ function cleanup_output_files {
 
 function get_longest_query_word {
    TMPFILE="/tmp/$EXP.$$.$RANDOM"
-   cat $LOGDIR$EXP | tr , '\n' | grep -v = > $TMPFILE 
+   cat $LOGDIR$EXP | tr , '\n' | grep -v = > $TMPFILE
    WORD="`sed 's/./1/g' $TMPFILE | paste -d' ' - $TMPFILE | sort -n | tail -1 | cut -d' ' -f2`"
    rm -f $TMPFILE
    echo $WORD
@@ -51,18 +52,13 @@ EXPWORD="`get_longest_query_word`"
 
 if [ "$MIN" = "00" ]
 then
-   stop_crawler
-   while [ -n "`test_crawler_is_running`" ]
-   do
-      sleep 1
-   done
+   cleanup_output_files &
+fi
+if [ -z "`test_crawler_is_running`" ]
+then
    start_crawler
-   cleanup_output_files
-else
-   if [ -z "`test_crawler_is_running`" ]
-   then
-      start_crawler
-   fi
+   sleep 1
+   $0 &
 fi
 
 exit 0
