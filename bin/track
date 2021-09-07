@@ -4,7 +4,7 @@
 # 20101216 erikt(at)xs4all.nl
 
 EXP="`basename $0`"
-BASEDIR="/home/cloud/"
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. >/dev/null 2>&1 && pwd )"/
 DATADIR="$BASEDIR$EXP/"
 LOGDIR="${BASEDIR}etc/"
 DATE="`date '+%Y%m%d-%H'`"
@@ -21,7 +21,7 @@ function start_crawler {
 
 function stop_crawler {
    ps -ef | grep curl | grep ${EXPWORD} |\
-      tr -s ' ' ' ' | cut -d' ' -f2 | xargs kill -9 2>/dev/null
+      tr -s ' ' ' ' | sed 's/^ *//' | cut -d' ' -f2 | xargs kill -9 2>/dev/null
 }
 
 function test_crawler_is_running {
