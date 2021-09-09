@@ -7,14 +7,15 @@ COMMAND="$0"
 BASEDIR=/home/erikt/crawler/software/LanguageIdentification/langclass
 BINDIR=/home/erikt/crawler/java/getjsontext
 TMPFILE=/tmp/addLanguage.$$.$RANDOM
+MAINBINDIR=/home/erikt/crawler/bin
 
 cd $BASEDIR
 # store tweets in temporary file
 tee $TMPFILE.tweet.tmp |\
    # extract the tweet text
-   $BINDIR/getTweetText.py |\
+   $MAINBINDIR/getTweetText.py |\
    # normalization
-   tr '[:upper:]' '[:lower:]' | sed 's/http[^ ]*//g'| $BINDIR/tokenize.py |\
+   tr '[:upper:]' '[:lower:]' | sed 's/http[^ ]*//g'| $MAINBINDIR/tokenize.py |\
    # guess language
    ../src/testtextcat conf.txt |\
    # choose one of the give languages
