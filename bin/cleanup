@@ -1,0 +1,42 @@
+#!/bin/bash
+# cleanup: combine hourly files that were split because of crashes
+# usage: cleanup [files]
+# note: without file arguments: will process files in current directory: .
+# 20110905 erikt(at)xs4all.nl
+
+# combine split hourly files
+process() {
+   FILE="$1"
+   FILE="`echo $FILE|cut -d. -f1,2,3`"
+   if [ -z "$FILE" ]; then echo "usage: process file" >&2; exit 1; fi
+   echo problem with $FILE
+   rm -f $TMPFILE
+   # combine files
+   for PART in `ls -rt ${FILE}*`
+   do
+      ls -lh $PART
+      # always delete final line, it might be incomplete
+      gunzip -c $PART | sed '$d' >> $TMPFILE
+      # save original file to backup directory OldFiles
+      /home/cloud/bin/ebackup -r $PART
+   done
+   gzip -c $TMPFILE > $FILE
+   ls -lh $FILE
+}
+
+TMPFILE=cleanup.$$.$RANDOM
+NOW="`date '+%Y%m%d-%H'`"
+if [ -n "$*" ]
+then
+   process $*
+else 
+   DIR=`pwd|rev|cut -d/ -f1|rev`
+   # check for which hour there are several files
+   for FILE in `ls -l *[0-9]|grep -v ' 20 [A-Z]'|rev|cut -d' ' -f1|rev|cut -d. -f1,2,3|sort -u|grep -v $NOW`
+   do
+      process $FILE
+   done
+fi
+rm -f $TMPFILE
+
+exit 0
