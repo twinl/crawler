@@ -1,0 +1,3 @@
+#!//bin/bash
+cd /home/cloud/java/misc
+java -classpath .:json-simple-1.1.1.jar nl.sara.hadoop.GetUserLang

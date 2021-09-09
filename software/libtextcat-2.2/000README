@@ -1,0 +1,14 @@
+# 20130214 creating language models
+
+N=3004
+head -$N TEST|grep -v '^\.'|cut -c3-|tr '[:upper:]' '[:lower:]' | sed 's/http[^ ]*//g'| tokenize > langclass/LM/tweetd.txt
+head -$N TEST|grep '^\.'|cut -c3-|tr '[:upper:]' '[:lower:]' | sed 's/http[^ ]*//g'| tokenize > langclass/LM/tweeto.txt
+src/createfp < langclass/LM/tweetd.txt > langclass/LM/tweetd.lm
+src/createfp < langclass/LM/tweeto.txt > langclass/LM/tweeto.lm
+exit 0
+
+# 20130211 creating language models (using 1029 lines)
+
+head -1029 TEST|grep '^r'|cut -c3-|tr '[:upper:]' '[:lower:]' | sed 's/http[^ ]*//'| tokenize > langclass/LM/tweetd.txt
+head -1029 TEST|grep -v '^r'|cut -c3-|tr '[:upper:]' '[:lower:]' | sed 's/http[^ ]*//'| tokenize > langclass/LM/tweeto.txt
+

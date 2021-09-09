@@ -1,0 +1,27 @@
+#!/usr/bin/perl -w
+# combine: add languaga information to JSON file
+# usage: combine < file
+# note: expected line format: language SPACE json
+# 20130208 erikt(at)xs4all.nl
+
+use strict;
+
+my $command = $0;
+my $OK = "TWINL {OK}";
+my $lastLine = $OK;
+while (<STDIN>) {
+   my $line = $_;
+   chomp($line);
+   # if line format is unexpected: do nothing with tweet
+   if ($line !~ /^(\S*)\s(\S+)\s({.*)$/) { print "$line\n"; $lastLine = $line; }
+   else {
+      my ($interface,$lang,$tweet) = ($1,$2,$3);
+      # accept all tweets from users with Twitter interface in dutch
+      if ($interface eq "nl") { $lang = "dutch"; } 
+      $tweet =~ s/}\s*$/,"twinl_lang":"$lang"}/;
+      print "$tweet\n";
+      $lastLine = $OK;
+   }
+}
+if ($lastLine ne $OK) { print STDERR "$command: warning: last line was: $lastLine\n"; }
+exit(0);

@@ -1,0 +1,5 @@
+20130211 creating language models (using 1029 lines)
+
+cloud-KVM LanguageIdentification: head -1029 TEST|grep '^r'|cut -c3-|tr '[:upper:]' '[:lower:]' | sed 's/http[^ ]*//'| tokenize > langclass/LM/tweetd.txt
+cloud-KVM LanguageIdentification: head -1029 TEST|grep -v '^r'|cut -c3-|tr '[:upper:]' '[:lower:]' | sed 's/http[^ ]*//'| tokenize > langclass/LM/tweeto.txt
+

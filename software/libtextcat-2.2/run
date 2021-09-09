@@ -1,0 +1,12 @@
+#!/bin/bash
+# run: add language to input lines
+# usage: run < file
+# 20130208 erikt(at)xs4all.nl
+
+COMMAND="$0"
+BASEDIR=/home/cloud/software/LanguageIdentification/langclass
+
+cd $BASEDIR
+../src/testtextcat conf.txt | ../all2one
+
+exit 0

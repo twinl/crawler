@@ -1,0 +1,23 @@
+#!/usr/bin/perl -w
+# all2one: convert language classification to one language
+# usage: cat tweets | ../src/testtextcat conf.txt | ../all2one
+# 20130207 erikt(at)xs4all.nl
+
+use strict;
+
+my %ok = qw(dutch 1 frisian 1 middle_frisian 1 afrikaans 1 german 1 tweetd 1); # SHORT 1);
+LOOP: while (<STDIN>) {
+   my $line = $_;
+   chomp($line);
+   if ($line !~ /^(\S+)\s(.*)$/) { print "$line\n"; next LOOP; }
+   my ($lang,$tweet) = ($1,$2);
+   my @langs = split(/[\[\]]+/,$lang);
+   if ($langs[0] eq "") { shift(@langs); }
+   if ($langs[$#langs] eq "") { pop(@langs); }
+   for (my $i=0;$i<=$#langs;$i++) {
+      if (not defined $ok{$langs[$i]}) { print "$langs[$i] $tweet\n"; next LOOP; }
+   }
+   if ($#langs == 0 and $langs[0] eq "german") { print "german $tweet\n"; }
+   else { print "dutch $tweet\n"; }
+}
+exit(0);
