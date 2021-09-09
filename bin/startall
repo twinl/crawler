@@ -14,6 +14,7 @@ sleep 5
 $BINDIR/locations &
 sleep 5
 $BINDIR/trackb &
+
 #sleep 5
 #/home/cloud/projects/puregome/crawler/run-every-minute.sh
 

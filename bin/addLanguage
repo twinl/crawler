@@ -4,10 +4,10 @@
 # 20130208 erikt(at)xs4all.nl
 
 COMMAND="$0"
-BASEDIR=/home/cloud/software/LanguageIdentification/langclass
-BINDIR=/home/cloud/java/getjsontext
+BASEDIR=/home/erikt/crawler/software/LanguageIdentification/langclass
+BINDIR=/home/erikt/crawler/java/getjsontext
 TMPFILE=/tmp/addLanguage.$$.$RANDOM
-MAINBINDIR=/home/cloud/bin
+MAINBINDIR=/home/erikt/bin
 
 cd $BASEDIR
 # store tweets in temporary file
@@ -24,7 +24,7 @@ tee $TMPFILE.tweet.tmp |\
 NBROFTWEETS=`wc -l < $TMPFILE.lang`
 head -$NBROFTWEETS $TMPFILE.tweet.tmp > $TMPFILE.tweet
 # get interface language
-/home/cloud/java/misc/GetUserLang.sh < $TMPFILE.tweet > $TMPFILE.interface
+/home/erikt/crawler/java/misc/GetUserLang.sh < $TMPFILE.tweet > $TMPFILE.interface
 # insert language in tweet in json format
 paste -d' ' $TMPFILE.interface $TMPFILE.lang $TMPFILE.tweet | ../combine
 # delete temporary files

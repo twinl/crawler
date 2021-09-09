@@ -3,7 +3,7 @@
 # usage: cleanupall
 # 20141028 erikt(at)xs4all.nl
 
-BASEDIR=/home/cloud
+BASEDIR=/home/erikt/crawler
 BINDIR=$BASEDIR/bin
 for DIR in locations dialect follow track trackb
 do

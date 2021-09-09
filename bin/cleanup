@@ -18,7 +18,7 @@ process() {
       # always delete final line, it might be incomplete
       gunzip -c $PART | sed '$d' >> $TMPFILE
       # save original file to backup directory OldFiles
-      /home/cloud/bin/ebackup -r $PART
+      /home/erikt/bin/ebackup -r $PART
    done
    gzip -c $TMPFILE > $FILE
    ls -lh $FILE

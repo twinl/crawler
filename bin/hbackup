@@ -4,9 +4,9 @@
 # note: alternative: hbackup files (stores all in 1 file)
 # 20120924 erikt(at)xs4all.nl
 
-eval $(/home/cloud/software/hathi-client/bin/env.sh)
+# eval $(/home/cloud/software/hathi-client/bin/env.sh)
 
-BASEDIR=/home/cloud
+BASEDIR=/home/erikt/crawler
 TRACKDIR=$BASEDIR/track
 FOLLOWDIR=$BASEDIR/follow
 DIALECTDIR=$BASEDIR/dialect
@@ -14,7 +14,6 @@ LOCATIONSDIR=$BASEDIR/locations
 TRACKBDIR=$BASEDIR/trackb
 BINDIR=$BASEDIR/bin
 TMPDIR=$BASEDIR/tmp
-WEBSERVER=cloud@145.100.59.103
 
 if [ -z "$*" ]
 then
@@ -34,16 +33,10 @@ then
    $BINDIR/merge.py $TRACKDIR/$FILE $FOLLOWDIR/$FILE $DIALECTDIR/$FILE $LOCATIONSDIR/$FILE $TRACKBDIR/$FILE |\
        $BINDIR/addLanguage |\
        gzip -c > $TMPDIR/$FILE
-   cd $TMPDIR
-   # $BINDIR/hcp -r $FILE
-   scp $FILE $WEBSERVER:/data/twitter
-   rm -f $TMPDIR/$FILE
+   mv $TMPDIR/$FILE $BASEDIR/twitter
 else
    FILE=`basename $1`
    $BINDIR/merge.py $* | $BINDIR/addLanguage | gzip -c > $TMPDIR/$FILE
-   cd $TMPDIR
-   # $BINDIR/hcp -r $FILE 2>&1 >&2a
-   scp $FILE $WEBSERVER:/data/twitter
-   rm -f $TMPDIR/$FILE
+   mv $TMPDIR/$FILE $BASEDIR/twitter
 fi
 exit 0
